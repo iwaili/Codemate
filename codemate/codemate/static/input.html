@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Input Form</title>
+    <style>
+        /* General styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .form-container {
+            width: 80%;
+            max-width: 600px;
+            margin: 50px auto;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Form styles */
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        input, textarea {
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="url"]:focus, textarea:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        /* PDF upload */
+        .pdf-upload {
+            position: relative;
+            border: 2px dashed #ccc;
+            padding: 20px;
+            border-radius: 4px;
+            background-color: #fafafa;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .pdf-upload p {
+            color: #777;
+            font-size: 0.9rem;
+        }
+
+        .pdf-upload input[type="file"] {
+            display: none;
+        }
+
+        .pdf-upload:hover {
+            background-color: #f0f0f0;
+        }
+
+        .pdf-upload:active {
+            background-color: #e0e0e0;
+        }
+
+        /* Submit button */
+        button {
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            font-size: 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:active {
+            background-color: #004085;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .form-container {
+                width: 95%;
+                padding: 15px;
+            }
+
+            input, textarea {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Custom Input Form</h1>
+        <form method="POST" action="{% url 'home' %}" enctype="multipart/form-data" onsubmit="return validateForm()">
+            {% csrf_token %}
+
+            <!-- Link Input -->
+            <label for="link">Link:</label>
+            <input type="url" id="link" name="link" placeholder="Enter a link">
+
+            <!-- YouTube Link Input -->
+            <label for="yt-link">YouTube Link:</label>
+            <input type="url" id="yt-link" name="yt-link" placeholder="Enter a YouTube link">
+
+            <!-- Text Input -->
+            <label for="text">Text:</label>
+            <textarea id="text" name="text" placeholder="Enter text here"></textarea>
+
+            <!-- PDF Upload -->
+            <label for="pdf">PDF Upload:</label>
+            <div class="pdf-upload">
+                <input type="file" id="pdf" name="pdf" accept="application/pdf">
+                <p>Drag and drop your PDF here or click to select a file from your computer.</p>
+            </div>
+
+            <!-- Hidden input to store section type -->
+            <input type="hidden" id="section_type" name="section_type" value="">
+
+            <button type="submit">Send</button>
+        </form>
+
+        <!-- YouTube-specific form (optional, for direct YouTube URL submission) -->
+        <form method="POST" action="{% url 'home' %}">
+            {% csrf_token %}
+            <input type="hidden" name="section_type" value="2"> <!-- For YouTube link section -->
+            <input type="text" name="yt-link" placeholder="Enter YouTube URL">
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        // JavaScript to set section type based on input field
+        const linkInput = document.getElementById('link');
+        const ytLinkInput = document.getElementById('yt-link');
+        const textInput = document.getElementById('text');
+        const pdfInput = document.getElementById('pdf');
+        const sectionTypeInput = document.getElementById('section_type');
+
+        linkInput.addEventListener('input', () => sectionTypeInput.value = 1);
+        ytLinkInput.addEventListener('input', () => sectionTypeInput.value = 2);
+        textInput.addEventListener('input', () => sectionTypeInput.value = 3);
+        pdfInput.addEventListener('change', () => sectionTypeInput.value = 4);
+
+        // Validate form to ensure only one input is filled
+        function validateForm() {
+            const filledFields = [
+                linkInput.value,
+                ytLinkInput.value,
+                textInput.value,
+                pdfInput.files.length > 0
+            ];
+
+            // Check how many fields are filled
+            const filledCount = filledFields.filter(Boolean).length;
+
+            // If more than one field is filled, prevent form submission
+            if (filledCount > 1) {
+                alert('Please fill in only one field: Link, YouTube Link, Text, or PDF.');
+                return false; // Prevent form submission
+            }
+            return true; // Allow form submission
+        }
+    </script>
+</body>
+</html>

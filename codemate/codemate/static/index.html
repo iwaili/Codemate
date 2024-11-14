@@ -1,0 +1,110 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    <div class="container">
+
+        <!-- Section 2: Display Form Data -->
+        <div class="section section2">
+            <h3>Form Data:</h3>
+            <div class="data-display">
+                <pre>{{ sent_data|dictsort:"key_name" }}</pre>
+                
+                {% if sent_data.link %}
+                    <p><strong>Link:</strong> {{ sent_data.link }}</p>
+                {% elif sent_data.yt_link %}
+                    <p><strong>YouTube Link:</strong> {{ sent_data.yt_link }}</p>
+                    <p>Video ID: {{ sent_data.yt_link }}</p>
+                    <div class="youtube-player">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/{{ sent_data.yt_link }}" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                {% elif sent_data.text %}
+                    <p><strong>Text:</strong> {{ sent_data.text }}</p>
+                {% elif sent_data.pdf %}
+                    <p><strong>PDF uploaded:</strong> {{ sent_data.pdf }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Section 3: Chatbot -->
+        <div class="section section3" id="chat-section">
+            <div class="chat-history" id="chat-history">
+                {% for message in message_history %}
+                    <div class="message {{ message.role }}">
+                        <p>{{ message.content }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Form for text input and recording -->
+            <form method="POST" action="{% url 'home' %}" id="chat-form">
+                {% csrf_token %}
+                <input type="text" name="user_message" id="user-message" placeholder="Type your message...">
+                <button type="submit">Send</button>
+                <button type="button" id="record-button">Record</button>
+            </form>
+
+            <!-- Audio recording controls -->
+            <audio id="audio-player" controls style="display:none;"></audio>
+
+        </div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        // Check for browser support
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            const recordButton = document.getElementById('record-button');
+
+            recordButton.onclick = async () => {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const formData = new FormData();
+                    formData.append('audio_file', audioBlob, 'recording.wav');
+
+                    // Send the audio file to the server
+                    await fetch("{% url 'home' %}", {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    });
+
+                    // Reset audio chunks
+                    audioChunks = [];
+                };
+
+                mediaRecorder.start();
+                recordButton.textContent = 'Stop Recording';
+                
+                recordButton.onclick = () => {
+                    mediaRecorder.stop();
+                    recordButton.textContent = 'Record';
+                };
+            };
+        }
+
+        // Scroll chat history to bottom on page load
+        window.onload = function() {
+            const chatHistory = document.getElementById("chat-history");
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        };
+    </script>
+</body>
+</html>
